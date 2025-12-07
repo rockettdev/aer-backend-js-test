@@ -9,5 +9,8 @@
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev": "nodemon --watch backend/src --ext ts --exec ts-node ./backend/src/app.ts"
   }
 }

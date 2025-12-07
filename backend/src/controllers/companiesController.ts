@@ -1,13 +1,50 @@
 import path from "path"
 import fs from "fs"
 import { Request, Response } from "express"
-
+import { ICompany } from "../interfaces/ICompany"
+import { sanitiseCompany } from "../services/companySanitiser";
+// import { IEmployee } from "../interfaces/IEmployee";
+// import companySchema  from "../schema/companies.json";
+// import employeesSchema from "../schema/employees.json";
 
 const companiesDir = path.join(process.cwd(), "data", "companies");
 
+const companyFiles = fs.readdirSync(companiesDir)
+
+// Reads each file and parse its JSON into an array of companies
+let companies: ICompany[] = companyFiles.flatMap(file => {
+    const filePath = path.join(companiesDir, file)
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+    return sanitiseCompany(data)
+})
 
 export const getAllCompanies = (req: Request, res: Response) => {
-    res.json({ message: "getAllCompanies not implemented" })
+
+    let filteredCompanies = [...companies];
+    // Receives name filter request from API
+    const nameFilter = (req.query.name as string)?.toLowerCase() || "" // to lowercase for case insensitive matching
+
+    // Receives limit from API request; supports 'all' to return all companies, defaults to 10 when no limit is provided
+    const limit = req.query.limit === "all" ? filteredCompanies.length : parseInt(req.query.limit as string) || 10;
+
+    // Receives offset from API request
+    const offset = parseInt(req.query.offset as string) || 0
+
+
+    // Checks for name filter included in API request
+    if (nameFilter) {
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameFilter)) // to lowercase for case insenstive matching
+    }
+
+    const paginatedCompanies = filteredCompanies.slice(offset, offset + limit)
+
+    res.json({
+        meta: {
+            total: filteredCompanies.length
+        },
+        data: paginatedCompanies
+
+    })
 }
 
 export const getCompanyById = (req: Request, res: Response) => {

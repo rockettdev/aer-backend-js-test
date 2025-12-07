@@ -1,0 +1,11 @@
+Typescript
+Express
+Ajv
+JsonWebToken
+
+
+npm run dev
+
+localhost:4000
+
+meta returned 4 total when 1 displayed -- fix was ensuring the length is calculated when the response is returned
