@@ -21,8 +21,13 @@ let companies: ICompany[] = companyFiles.flatMap(file => {
 export const getAllCompanies = (req: Request, res: Response) => {
 
     let filteredCompanies = [...companies];
+
     // Receives name filter request from API
+    // Checks for name filter included in API request
     const nameFilter = (req.query.name as string)?.toLowerCase() || "" // to lowercase for case insensitive matching
+    if (nameFilter) {
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameFilter)) // to lowercase for case insenstive matching
+    }
 
     // Receives limit from API request; supports 'all' to return all companies, defaults to 10 when no limit is provided
     const limit = req.query.limit === "all" ? filteredCompanies.length : parseInt(req.query.limit as string) || 10;
@@ -30,17 +35,19 @@ export const getAllCompanies = (req: Request, res: Response) => {
     // Receives offset from API request
     const offset = parseInt(req.query.offset as string) || 0
 
-
-    // Checks for name filter included in API request
-    if (nameFilter) {
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameFilter)) // to lowercase for case insenstive matching
-    }
-
+    // Slice for pagination
     const paginatedCompanies = filteredCompanies.slice(offset, offset + limit)
+
+    const totalCount = filteredCompanies.length;
+    const totalPages = limit === 0 ? 1 : Math.ceil(totalCount / limit);
+
 
     res.json({
         meta: {
-            total: filteredCompanies.length
+            total: totalCount,
+            limit: limit,
+            offset: offset,
+            totalPages: totalPages
         },
         data: paginatedCompanies
 
