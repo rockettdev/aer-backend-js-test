@@ -8,8 +8,8 @@ import { z } from "zod"
 
 // I use zod here to prevent parameter tampering
 const getAllCompaniesQuerySchema = z.object({
-    companyName: z.string().max(50).trim().optional(),
-    employeeName: z.string().max(50).trim().optional(),
+    companyName: z.string().max(50).trim().toLowerCase().optional(),
+    employeeName: z.string().max(50).trim().toLowerCase().optional(),
     limit: z.union([z.string().regex(/^\d+$/), z.literal("all")]).optional(),   // numeric string or "all"
     offset: z.string().regex(/^\d+$/).optional(),   // numeric string
     active: z.enum(["true", "false"]).optional()  // accept only "true" or "false"
@@ -80,19 +80,17 @@ export const getAllCompanies = (req: Request, res: Response) => {
     // Filter companies by companyName, case insensitive
     // Max length enforced by zod for DoS protection
     if (companyName) {
-        const nameLower = companyName.toLowerCase()
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameLower))
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyName))
     }
 
     // Filter employees by employeeName, remove companies with no matches
     // Max length enforced by zod
     if (employeeName) {
-        const employeeLower = employeeName.toLowerCase()
         filteredCompanies = filteredCompanies
             .map(company => {
                 const matchingEmployees = company.employees?.filter(emp =>
-                    emp.first_name.toLowerCase().includes(employeeLower) ||
-                    emp.last_name.toLowerCase().includes(employeeLower)
+                    emp.first_name.toLowerCase().includes(employeeName) ||
+                    emp.last_name.toLowerCase().includes(employeeName)
                 ) ?? [];
 
                 return { ...company, employees: matchingEmployees };
