@@ -39,8 +39,9 @@ export const getAllCompanies = (req: Request, res: Response) => {
     const paginatedCompanies = filteredCompanies.slice(offset, offset + limit)
 
     const totalCount = filteredCompanies.length;
-    const totalPages = limit === 0 ? 1 : Math.ceil(totalCount / limit);
 
+    // Calculates total page count, sets totalPages to 1 if limit is 0
+    const totalPages = limit === 0 ? 1 : Math.ceil(totalCount / limit);
 
     res.json({
         meta: {
@@ -55,6 +56,17 @@ export const getAllCompanies = (req: Request, res: Response) => {
 }
 
 export const getCompanyById = (req: Request, res: Response) => {
-    const id = req.params.id
-    res.json({ id })
+    const id = parseInt(req.params.id)
+
+    let companyList = [...companies]
+
+    // Finds individual company entry
+    let filteredCompany = companyList.find(c => c.id === id)
+
+    // Returns 404 error if company is not found
+    if (!filteredCompany) {
+        return res.status(404).json({ error: "Company not found" });
+    }
+
+    res.json({ data: filteredCompany })
 }
