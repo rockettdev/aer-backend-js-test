@@ -12,7 +12,7 @@ const getAllCompaniesQuerySchema = z.object({
     employeeName: z.string().max(50).trim().optional(),
     limit: z.union([z.string().regex(/^\d+$/), z.literal("all")]).optional(),   // numeric string or "all"
     offset: z.string().regex(/^\d+$/).optional(),   // numeric string
-    active: z.boolean().optional()
+    active: z.enum(["true", "false"]).optional()  // accept only "true" or "false"
 }).strict();
 
 const companiesDir = path.join(process.cwd(), "data", "companies");
@@ -41,6 +41,8 @@ companies.forEach(company => {
 
 export const getAllCompanies = (req: Request, res: Response) => {
 
+    let filteredCompanies = [...companies];
+
     // Validate query
     const parsed = getAllCompaniesQuerySchema.safeParse(req.query);
 
@@ -52,8 +54,17 @@ export const getAllCompanies = (req: Request, res: Response) => {
         });
     }
 
-    const { companyName, employeeName, limit, offset } = parsed.data;
-    let filteredCompanies = [...companies];
+    const { companyName, employeeName, limit, offset, active: activeStr } = parsed.data;
+
+    // Converts active query parameter from string to boolean
+    const active = activeStr === "true" ? true : activeStr === "false" ? false : undefined;
+    const numericLimit: number = limit === "all" ? filteredCompanies.length : parseInt(limit || "10");
+    const numericOffset: number = parseInt(offset || "0");
+
+    // Checks for undefined, since a simple boolean check would skip false values
+    if (active !== undefined) {
+        filteredCompanies = filteredCompanies.filter(c => c.active === active)
+    }
 
     // Filter companies by companyName, case insensitive
     // Max length enforced by zod for DoS protection
@@ -77,11 +88,6 @@ export const getAllCompanies = (req: Request, res: Response) => {
     }
 
 
-    // Receives limit from API request; supports 'all' to return all companies, defaults to 10 when no limit is provided
-    const numericLimit: number = limit === "all" ? filteredCompanies.length : parseInt(limit || "10");
-
-    // Receives offset from API request
-    const numericOffset: number = parseInt(offset || "0");
 
     // Slice for pagination
     const paginatedCompanies = filteredCompanies.slice(numericOffset, numericOffset + numericLimit);
