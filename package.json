@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "express-rate-limit": "^8.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -9,5 +11,8 @@
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev": "nodemon --watch backend/src --ext ts --exec ts-node ./backend/src/app.ts"
   }
 }
