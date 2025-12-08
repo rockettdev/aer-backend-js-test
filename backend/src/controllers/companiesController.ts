@@ -24,14 +24,25 @@ const employeeFiles = fs.readdirSync(employeesDir)
 // Reads each file and parse its JSON into an array of companies
 let companies: ICompany[] = companyFiles.flatMap(file => {
     const filePath = path.join(companiesDir, file)
-    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
-    return sanitiseCompany(data)
+    try {
+        const raw = fs.readFileSync(filePath, "utf-8")
+        const parsed = JSON.parse(raw)
+        return sanitiseCompany(parsed)
+    } catch (err) {
+        console.error(`Invalid company JSON file: ${file}`, err)
+        return []  // skip file if format is invalid
+    }
 })
 
 let employees: IEmployee[] = employeeFiles.flatMap(file => {
     const filePath = path.join(employeesDir, file)
-    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
-    return data
+    try {
+        const raw = fs.readFileSync(filePath, "utf-8")
+        return JSON.parse(raw)
+    } catch (err) {
+        console.error(`Invalid employee JSON file: ${file}`, err)
+        return [] // skip file if format is invalid
+    }
 })
 
 // Merges the matching employees to the respective company - o(n*m)
