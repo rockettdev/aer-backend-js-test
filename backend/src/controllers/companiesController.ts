@@ -80,17 +80,19 @@ export const getAllCompanies = (req: Request, res: Response) => {
     // Filter companies by companyName, case insensitive
     // Max length enforced by zod for DoS protection
     if (companyName) {
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyName))
+        const nameLower = companyName.toLowerCase()
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameLower))
     }
 
     // Filter employees by employeeName, remove companies with no matches
     // Max length enforced by zod
     if (employeeName) {
+        const employeeLower = employeeName.toLowerCase()
         filteredCompanies = filteredCompanies
             .map(company => {
                 const matchingEmployees = company.employees?.filter(emp =>
-                    emp.first_name.toLowerCase().includes(employeeName) ||
-                    emp.last_name.toLowerCase().includes(employeeName)
+                    emp.first_name.toLowerCase().includes(employeeLower) ||
+                    emp.last_name.toLowerCase().includes(employeeLower)
                 ) ?? [];
 
                 return { ...company, employees: matchingEmployees };
