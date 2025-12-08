@@ -3,13 +3,16 @@ import fs from "fs"
 import { Request, Response } from "express"
 import { ICompany } from "../interfaces/ICompany"
 import { sanitiseCompany } from "../services/companySanitiser";
+import { IEmployee } from "../interfaces/IEmployee";
 // import { IEmployee } from "../interfaces/IEmployee";
 // import companySchema  from "../schema/companies.json";
 // import employeesSchema from "../schema/employees.json";
 
 const companiesDir = path.join(process.cwd(), "data", "companies");
-
 const companyFiles = fs.readdirSync(companiesDir)
+
+const employeesDir = path.join(process.cwd(), "data", "employees");
+const employeeFiles = fs.readdirSync(employeesDir)
 
 // Reads each file and parse its JSON into an array of companies
 let companies: ICompany[] = companyFiles.flatMap(file => {
@@ -18,16 +21,43 @@ let companies: ICompany[] = companyFiles.flatMap(file => {
     return sanitiseCompany(data)
 })
 
+let employees: IEmployee[] = employeeFiles.flatMap(file => {
+    const filePath = path.join(employeesDir, file)
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+    return data
+})
+
+// Merges the matching employees to the respective company - o(n*m)
+companies.forEach(company => {
+    company.employees = employees.filter(employee => employee.company_id === company.id)
+})
+
 export const getAllCompanies = (req: Request, res: Response) => {
 
     let filteredCompanies = [...companies];
 
-    // Receives name filter request from API
-    // Checks for name filter included in API request
-    const nameFilter = (req.query.name as string)?.toLowerCase() || "" // to lowercase for case insensitive matching
-    if (nameFilter) {
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(nameFilter)) // to lowercase for case insenstive matching
+    // Receives company name filter request from API
+    // Checks for company name filter included in API request
+    const companyNameFilter = req.query.name?.toString().trim().toLowerCase() // to lowercase for case insensitive matching
+    if (companyNameFilter) {
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyNameFilter)) // to lowercase for case insenstive matching
     }
+
+    // Filters companies to includ only employees matching the provided name, companies with no matching employees are removed
+    const employeeNameFilter = req.query.employeeName?.toString().trim().toLowerCase()
+    if (employeeNameFilter) {
+        filteredCompanies = filteredCompanies
+            .map(company => {
+                const matchingEmployees = company.employees?.filter(emp =>
+                    emp.first_name.toLowerCase().includes(employeeNameFilter) ||
+                    emp.last_name.toLowerCase().includes(employeeNameFilter)
+                ) ?? [];
+
+                return { ...company, employees: matchingEmployees };
+            })
+            .filter(company => company.employees.length > 0); // only keep companies that have matching employees
+    }
+
 
     // Receives limit from API request; supports 'all' to return all companies, defaults to 10 when no limit is provided
     const limit = req.query.limit === "all" ? filteredCompanies.length : parseInt(req.query.limit as string) || 10;

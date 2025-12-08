@@ -15,7 +15,7 @@ const phoneRegex = /^(?!-)\+?[0-9\s()-]{5,20}(?<!-)$/;
 function isValidPhone(companyName: string, companyTelephone: string): boolean {
     const valid = phoneRegex.test(companyTelephone);
     if (!valid) {
-        console.warn(`Company "${companyName}" has an invalid telephone number: ${companyTelephone}. Replaced with "n/a".`);
+        console.warn(`Sanitisation: Company "${companyName}" has an invalid telephone number: ${companyTelephone}. Replaced with "n/a".`);
     }
     return valid;
 }
