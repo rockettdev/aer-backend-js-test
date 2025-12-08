@@ -50,6 +50,25 @@ companies.forEach(company => {
     company.employees = employees.filter(employee => employee.company_id === company.id)
 })
 
+
+/**
+ * GET /companies
+ * 
+ * Retrieves a paginated list of companies, optionally filtered by company name,
+ * employee name, and active status. Includes nested employee data for each company.
+ *
+ * Query Parameters:
+ * @param companyName - Optional string filter for company names (case insensitive, max 50 chars)
+ * @param employeeName - Optional string filter for employees' first or last names (case insensitive, max 50 chars)
+ * @param limit - Optional pagination limit (numeric string or "all")
+ * @param offset - Optional pagination offset (numeric string)
+ * @param active - Optional string "true" or "false" to filter by active status
+ *
+ * Response:
+ * @returns JSON object containing:
+ *   - meta: Pagination info (total, limit, offset, totalPages)
+ *   - data: Array of company objects, each including nested employees
+ */
 export const getAllCompanies = (req: Request, res: Response) => {
 
     let filteredCompanies = [...companies];
@@ -98,8 +117,6 @@ export const getAllCompanies = (req: Request, res: Response) => {
             .filter(company => company.employees.length > 0); // only keep companies that have matching employees
     }
 
-
-
     // Slice for pagination
     const paginatedCompanies = filteredCompanies.slice(numericOffset, numericOffset + numericLimit);
 
@@ -120,6 +137,19 @@ export const getAllCompanies = (req: Request, res: Response) => {
     })
 }
 
+
+/**
+ * GET /companies/{id}
+ *
+ * Retrieves a single company by its ID, including nestd employees
+ *
+ * Path Parameters:
+ * @param id - Integer ID of the company
+ *
+ * Response:
+ * @returns JSON object containing:
+ *   - data: Single company object, or 404 error if not found
+ */
 export const getCompanyById = (req: Request, res: Response) => {
     const id = parseInt(req.params.id)
 

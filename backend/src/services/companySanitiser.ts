@@ -32,7 +32,7 @@ export function sanitiseCompany(companies: Partial<ICompany>[]): ICompany[] {
     const clean: ICompany[] = [];
 
     for (const company of companies) {
-        // Check for missing id or name and reject the entry if either are missing
+
         if (!company.id || !company.name) {
             console.warn(`Rejected company entry due to missing critical field:`, company);
             continue;
