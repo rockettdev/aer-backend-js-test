@@ -1,6 +1,16 @@
 
 # Coding Challenge: RESTful API 
 
+
+# INSTALLATION GUIDE
+
+Run 'npm install' after cloning the repo
+
+Start the local server with 'npm run dev'
+
+App will be available at 'http://localhost:4000/'
+
+
 ## Objective
 
 Develop a RESTful API with two endpoints to manage and retrieve company data.
