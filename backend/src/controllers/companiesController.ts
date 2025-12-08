@@ -4,9 +4,16 @@ import { Request, Response } from "express"
 import { ICompany } from "../interfaces/ICompany"
 import { sanitiseCompany } from "../services/companySanitiser";
 import { IEmployee } from "../interfaces/IEmployee";
-// import { IEmployee } from "../interfaces/IEmployee";
-// import companySchema  from "../schema/companies.json";
-// import employeesSchema from "../schema/employees.json";
+import { z } from "zod"
+
+// I use zod here to prevent parameter tampering
+const getAllCompaniesQuerySchema = z.object({
+    companyName: z.string().max(50).trim().optional(),
+    employeeName: z.string().max(50).trim().optional(),
+    limit: z.union([z.string().regex(/^\d+$/), z.literal("all")]).optional(),   // numeric string or "all"
+    offset: z.string().regex(/^\d+$/).optional(),   // numeric string
+    active: z.boolean().optional()
+}).strict();
 
 const companiesDir = path.join(process.cwd(), "data", "companies");
 const companyFiles = fs.readdirSync(companiesDir)
@@ -34,23 +41,34 @@ companies.forEach(company => {
 
 export const getAllCompanies = (req: Request, res: Response) => {
 
-    let filteredCompanies = [...companies];
+    // Validate query
+    const parsed = getAllCompaniesQuerySchema.safeParse(req.query);
 
-    // Receives company name filter request from API
-    // Checks for company name filter included in API request
-    const companyNameFilter = req.query.name?.toString().trim().toLowerCase() // to lowercase for case insensitive matching
-    if (companyNameFilter) {
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyNameFilter)) // to lowercase for case insenstive matching
+    // Returns error if invalid query parameter is detected
+    if (!parsed.success) {
+        return res.status(400).json({
+            error: "Invalid query parameters",
+            details: parsed.error.issues
+        });
     }
 
-    // Filters companies to includ only employees matching the provided name, companies with no matching employees are removed
-    const employeeNameFilter = req.query.employeeName?.toString().trim().toLowerCase()
-    if (employeeNameFilter) {
+    const { companyName, employeeName, limit, offset } = parsed.data;
+    let filteredCompanies = [...companies];
+
+    // Filter companies by companyName, case insensitive
+    // Max length enforced by zod for DoS protection
+    if (companyName) {
+        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyName))
+    }
+
+    // Filter employees by employeeName, remove companies with no matches
+    // Max length enforced by zod
+    if (employeeName) {
         filteredCompanies = filteredCompanies
             .map(company => {
                 const matchingEmployees = company.employees?.filter(emp =>
-                    emp.first_name.toLowerCase().includes(employeeNameFilter) ||
-                    emp.last_name.toLowerCase().includes(employeeNameFilter)
+                    emp.first_name.toLowerCase().includes(employeeName) ||
+                    emp.last_name.toLowerCase().includes(employeeName)
                 ) ?? [];
 
                 return { ...company, employees: matchingEmployees };
@@ -60,24 +78,24 @@ export const getAllCompanies = (req: Request, res: Response) => {
 
 
     // Receives limit from API request; supports 'all' to return all companies, defaults to 10 when no limit is provided
-    const limit = req.query.limit === "all" ? filteredCompanies.length : parseInt(req.query.limit as string) || 10;
+    const numericLimit: number = limit === "all" ? filteredCompanies.length : parseInt(limit || "10");
 
     // Receives offset from API request
-    const offset = parseInt(req.query.offset as string) || 0
+    const numericOffset: number = parseInt(offset || "0");
 
     // Slice for pagination
-    const paginatedCompanies = filteredCompanies.slice(offset, offset + limit)
+    const paginatedCompanies = filteredCompanies.slice(numericOffset, numericOffset + numericLimit);
 
     const totalCount = filteredCompanies.length;
 
     // Calculates total page count, sets totalPages to 1 if limit is 0
-    const totalPages = limit === 0 ? 1 : Math.ceil(totalCount / limit);
+    const totalPages = numericLimit === 0 ? 1 : Math.ceil(totalCount / numericLimit);
 
     res.json({
         meta: {
             total: totalCount,
-            limit: limit,
-            offset: offset,
+            limit: numericLimit,
+            offset: numericOffset,
             totalPages: totalPages
         },
         data: paginatedCompanies
@@ -91,7 +109,7 @@ export const getCompanyById = (req: Request, res: Response) => {
     let companyList = [...companies]
 
     // Finds individual company entry
-    let filteredCompany = companyList.find(c => c.id === id)
+    const filteredCompany = companyList.find(c => c.id === id)
 
     // Returns 404 error if company is not found
     if (!filteredCompany) {
