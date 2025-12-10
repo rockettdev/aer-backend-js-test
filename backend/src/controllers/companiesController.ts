@@ -50,7 +50,6 @@ companies.forEach(company => {
     company.employees = employees.filter(employee => employee.company_id === company.id)
 })
 
-
 /**
  * GET /companies
  * 
@@ -93,13 +92,13 @@ export const getAllCompanies = (req: Request, res: Response) => {
 
     // Checks for undefined, since a simple boolean check would skip false values
     if (active !== undefined) {
-        filteredCompanies = filteredCompanies.filter(c => c.active === active)
+        filteredCompanies = filteredCompanies.filter(company => company.active === active)
     }
 
     // Filter companies by companyName, case insensitive
     // Max length enforced by zod for DoS protection
     if (companyName) {
-        filteredCompanies = filteredCompanies.filter(c => c.name && c.name.toLowerCase().includes(companyName))
+        filteredCompanies = filteredCompanies.filter(company => company.name && company.name.toLowerCase().includes(companyName))
     }
 
     // Filter employees by employeeName, remove companies with no matches
@@ -156,7 +155,7 @@ export const getCompanyById = (req: Request, res: Response) => {
     let companyList = [...companies]
 
     // Finds individual company entry
-    const filteredCompany = companyList.find(c => c.id === id)
+    const filteredCompany = companyList.find(company => company.id === id)
 
     // Returns 404 error if company is not found
     if (!filteredCompany) {

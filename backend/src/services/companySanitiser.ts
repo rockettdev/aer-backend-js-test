@@ -15,10 +15,22 @@ const phoneRegex = /^(?!-)\+?[0-9\s()-]{5,20}(?<!-)$/;
 function isValidPhone(companyName: string, companyTelephone: string): boolean {
     const valid = phoneRegex.test(companyTelephone);
     if (!valid) {
-        console.warn(`Sanitisation: Company "${companyName}" has an invalid telephone number: ${companyTelephone}. Replaced with "n/a".`);
+        console.warn(`Sanitisation: Company "${companyName}" has an invalid telephone number: ${companyTelephone}. Replaced with "".`);
     }
     return valid;
 }
+
+/**
+ * Trims a string and provides a fallback if it is empty or undefined
+ *
+ * @param str - The string to clean. Can be undefined
+ * @param fallback - The value to return if str is undefined, null, or only whitespace. Defaults to an empty string
+ * @returns The trimmed string if it has content; otherwise the fallback value
+ */
+function cleanString(str?: string, fallback = ""): string {
+    return str && str.trim() ? str.trim() : fallback;
+}
+
 
 /**
  * Sanitises an array of company objects
@@ -40,15 +52,15 @@ export function sanitiseCompany(companies: Partial<ICompany>[]): ICompany[] {
 
         clean.push({
             id: company.id,
-            name: company.name,
-            industry: company.industry ?? "n/a",
+            name: cleanString(company.name),
+            industry: cleanString(company.industry, "n/a"),
             active: company.active ?? false,
-            website: company.website ?? "",
-            telephone: company.telephone && isValidPhone(company.name, company.telephone) ? company.telephone : "n/a",
-            slogan: company.slogan ?? "",
-            address: company.address ?? "",
-            city: company.city ?? "n/a",
-            country: company.country ?? "n/a"
+            website: cleanString(company.website),
+            telephone: company.telephone && isValidPhone(company.name, company.telephone) ? company.telephone.trim() : "",
+            slogan: cleanString(company.slogan),
+            address: cleanString(company.address),
+            city: cleanString(company.city),
+            country: cleanString(company.country)
         });
     }
     return clean;
