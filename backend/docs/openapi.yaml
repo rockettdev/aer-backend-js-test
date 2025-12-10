@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: Companies API
+  description: API for managing companies and employees
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4000
+
+paths:
+  /companies:
+    get:
+      summary: Get all companies
+      description: Retrieves a paginated list of companies with optional filtering by company or employee name, and active status.
+      parameters:
+        - in: query
+          name: companyName
+          schema:
+            type: string
+            maxLength: 50
+          description: Optional filter for company name (case insensitive)
+        - in: query
+          name: employeeName
+          schema:
+            type: string
+            maxLength: 50
+          description: Optional filter for employee first or last name (case insensitive)
+        - in: query
+          name: limit
+          schema:
+            oneOf:
+              - type: string
+              - enum: ["all"]
+          description: Maximum number of results or "all"
+        - in: query
+          name: offset
+          schema:
+            type: string
+          description: Pagination offset
+        - in: query
+          name: active
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Filter by active status
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      totalPages:
+                        type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+
+  /companies/{id}:
+    get:
+      summary: Get a single company
+      description: Retrieves a single company by ID, including nested employees
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Company found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Company'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+components:
+  schemas:
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        company_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: string
+        active:
+          type: boolean
+        website:
+          type: string
+        telephone:
+          type: string
+        slogan:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'

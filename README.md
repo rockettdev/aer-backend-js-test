@@ -10,6 +10,10 @@ Start the local server with 'npm run dev'
 
 App will be available at 'http://localhost:4000/'
 
+To run tests, execute 'npm test'
+
+To view the API documentation, ensure the server is running and open 'http://localhost:4000/api-docs' in your browser
+
 
 ## Objective
 
